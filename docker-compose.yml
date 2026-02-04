@@ -1,0 +1,18 @@
+version: "3.9"
+
+services:
+  db:
+    image: postgres:16
+    container_name: buscai-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: buscai
+      POSTGRES_USER: buscai
+      POSTGRES_PASSWORD: buscai
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+
+volumes:
+  postgres-data:

@@ -1,0 +1,17 @@
+{
+  "name": "@buscai/shared-schema",
+  "version": "0.1.0",
+  "type": "module",
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "scripts": {
+    "build": "tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "openapi-typescript": "^6.7.1",
+    "typescript": "^5.4.0"
+  }
+}

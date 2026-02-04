@@ -1,0 +1,2 @@
+-- This migration is intentionally left empty because payload is created in 0003.
+-- Retained to preserve journal order without altering the schema on fresh databases.

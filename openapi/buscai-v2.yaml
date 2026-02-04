@@ -1,0 +1,2649 @@
+openapi: 3.1.0
+info:
+  title: BUSCAI API
+  version: 1.0.0
+
+servers:
+  - url: /api
+
+tags:
+  - name: Integrations
+    description: Internal integrations (WhatsApp, etc.)
+  - name: Internal
+    description: Internal monitoring endpoints
+  - name: claims
+    description: Claim requests and anti-duplicidade helpers
+  - name: serpapi
+    description: Admin import/export of SerpAPI data
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    User:
+      type: object
+      required: [id, email, name]
+      properties:
+        id: { type: string }
+        email: { type: string }
+        name: { type: string }
+        role:
+          type: string
+          enum: [admin, owner]
+        createdAt:
+          type: string
+          format: date-time
+
+    City:
+      type: object
+      required: [id, name, state]
+      properties:
+        id: { type: string }
+        name: { type: string }
+        state: { type: string }
+        isActive: { type: boolean }
+
+    Niche:
+      type: object
+      required: [id, label, slug]
+      properties:
+        id: { type: string }
+        label: { type: string }
+        slug: { type: string }
+        isActive: { type: boolean }
+
+    AuthLoginInput:
+      type: object
+      required: [email, password]
+      properties:
+        email: { type: string, format: email }
+        password: { type: string }
+
+    AuthRefreshInput:
+      type: object
+      required: [refreshToken]
+      properties:
+        refreshToken: { type: string }
+
+    AuthLoginResponse:
+      type: object
+      properties:
+        accessToken: { type: string }
+        refreshToken: { type: string }
+        user:
+          $ref: "#/components/schemas/User"
+
+    AuthRefreshResponse:
+      type: object
+      properties:
+        accessToken: { type: string }
+
+    AuthLogoutRequest:
+      type: object
+      properties:
+        refreshToken: { type: string }
+
+    AuthLogoutResponse:
+      type: object
+      required: [success]
+      properties:
+        success: { type: boolean }
+
+    CompanyChannels:
+      type: object
+      properties:
+        phone: { type: string }
+        whatsapp: { type: string }
+        address: { type: string }
+        latitude: { type: number }
+        longitude: { type: number }
+        openingHours: { type: string }
+
+    Company:
+      type: object
+      required: [id, tradeName]
+      properties:
+        id: { type: string }
+        tradeName: { type: string }
+        legalName: { type: string, nullable: true }
+        cityId: { type: string }
+        ownerId: { type: string }
+        origin:
+          type: string
+          enum: [serpapi, manual, claimed]
+        qualityScore:
+          type: integer
+        city:
+          $ref: "#/components/schemas/City"
+        niches:
+          type: array
+          items:
+            type: object
+            properties:
+              id: { type: string }
+              label: { type: string }
+              slug: { type: string }
+              isActive: { type: boolean }
+        status:
+          type: string
+          enum: [draft, pending, active, suspended]
+        channels:
+          $ref: "#/components/schemas/CompanyChannels"
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    AdminCompany:
+      type: object
+      required:
+        [id, name, cityId, nicheId, addressLine, status, origin, qualityScore]
+      properties:
+        id: { type: string }
+        name: { type: string }
+        cityId: { type: string }
+        nicheId: { type: string }
+        addressLine: { type: string }
+        phoneE164: { type: string, nullable: true }
+        whatsappE164: { type: string, nullable: true }
+        website: { type: string, nullable: true }
+        lat: { type: string, nullable: true }
+        lng: { type: string, nullable: true }
+        status:
+          type: string
+          enum: [draft, pending, active, suspended]
+        origin:
+          type: string
+          enum: [serpapi, manual, claimed]
+        qualityScore: { type: integer }
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    AdminCompanyCreateInput:
+      type: object
+      required: [name, cityId, nicheId, addressLine]
+      properties:
+        name: { type: string }
+        cityId: { type: string }
+        nicheId: { type: string }
+        addressLine: { type: string }
+        phoneE164: { type: string }
+        whatsappE164: { type: string }
+        website: { type: string }
+        lat: { type: number }
+        lng: { type: number }
+        status:
+          type: string
+          enum: [draft, pending, active, suspended]
+        origin:
+          type: string
+          enum: [serpapi, manual, claimed]
+        force: { type: boolean }
+
+    AdminCompanyUpdateInput:
+      type: object
+      properties:
+        name: { type: string }
+        cityId: { type: string }
+        nicheId: { type: string }
+        addressLine: { type: string }
+        phoneE164: { type: string }
+        whatsappE164: { type: string }
+        website: { type: string }
+        lat: { type: number }
+        lng: { type: number }
+        status:
+          type: string
+          enum: [draft, pending, active, suspended]
+        origin:
+          type: string
+          enum: [serpapi, manual, claimed]
+        force: { type: boolean }
+
+    AdminCompanyStatusInput:
+      type: object
+      required: [status]
+      properties:
+        status:
+          type: string
+          enum: [draft, pending, active, suspended]
+
+    AdminCompaniesResponse:
+      type: object
+      required: [items, total, page, limit]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/AdminCompany"
+        total: { type: integer }
+        page: { type: integer }
+        limit: { type: integer }
+
+    DedupeHit:
+      type: object
+      required: [id, name, status, cityId]
+      properties:
+        id: { type: string }
+        name: { type: string }
+        addressLine: { type: string, nullable: true }
+        phoneE164: { type: string, nullable: true }
+        whatsappE164: { type: string, nullable: true }
+        website: { type: string, nullable: true }
+        status: { type: string }
+        cityId: { type: string }
+
+    DedupeConflictResponse:
+      type: object
+      required: [message, dedupeHits]
+      properties:
+        message: { type: string }
+        dedupeHits:
+          type: array
+          items:
+            $ref: "#/components/schemas/DedupeHit"
+
+    SerpapiPublishRequest:
+      type: object
+      properties:
+        statusAfter:
+          type: string
+          enum: [pending, active]
+        force: { type: boolean }
+        targetCompanyId: { type: string }
+
+    SerpapiPublishResponse:
+      type: object
+      required: [companyId, mode]
+      properties:
+        companyId: { type: string }
+        mode:
+          type: string
+          enum: [created, linked]
+
+    SerpapiImportRequest:
+      type: object
+      required: [cityId, nicheId]
+      properties:
+        cityId: { type: string }
+        nicheId: { type: string }
+        query: { type: string }
+        limit: { type: integer }
+        dryRun: { type: boolean }
+
+    SerpapiRunSummary:
+      type: object
+      required: [id, status, createdAt]
+      properties:
+        id: { type: string }
+        status: { type: string }
+        cityId: { type: string }
+        nicheId: { type: string }
+        query: { type: string }
+        found: { type: integer }
+        inserted: { type: integer }
+        updated: { type: integer }
+        conflicts: { type: integer }
+        errors: { type: integer }
+        createdAt: { type: string, format: date-time }
+        finishedAt: { type: string, format: date-time }
+
+    SerpapiRecordItem:
+      type: object
+      required: [id, status]
+      properties:
+        id: { type: string }
+        status:
+          type: string
+          enum: [inserted, updated, conflict, error, ignored]
+        companyId: { type: string }
+        dedupeKey: { type: string }
+        reason: { type: string }
+        rawPreview:
+          type: string
+          description: Sanitized preview (JSON of title/name/address/website truncated to 2000 chars)
+
+    SerpapiRunDetail:
+      type: object
+      required: [run, records]
+      properties:
+        run:
+          $ref: "#/components/schemas/SerpapiRunSummary"
+        records:
+          type: object
+          required: [items, total]
+          properties:
+            items:
+              type: array
+              items:
+                $ref: "#/components/schemas/SerpapiRecordItem"
+            total: { type: integer }
+
+    SerpapiRecordsResponse:
+      type: object
+      required: [items, total, limit, offset]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/SerpapiRecordItem"
+        total:
+          type: integer
+        limit:
+          type: integer
+        offset:
+          type: integer
+
+    ResolveConflictRequest:
+      type: object
+      required: [recordId, action]
+      properties:
+        recordId: { type: string }
+        action:
+          type: string
+          enum: [link_existing, create_new, ignore]
+        companyId: { type: string }
+
+    CompanyCreateInput:
+      type: object
+      required: [tradeName, cityId]
+      properties:
+        tradeName: { type: string }
+        legalName: { type: string }
+        cityId: { type: string }
+        nicheIds:
+          type: array
+          items: { type: string }
+        channels:
+          $ref: "#/components/schemas/CompanyChannels"
+
+    CompanyUpdateInput:
+      type: object
+      properties:
+        tradeName: { type: string }
+        legalName: { type: string }
+        nicheIds:
+          type: array
+          items: { type: string }
+
+    CompanyClaimInput:
+      type: object
+      required: [proofType, proofValue]
+      properties:
+        proofType:
+          type: string
+          enum: [sms, email, document]
+        proofValue: { type: string }
+
+    PaginatedCompanies:
+      type: object
+      required: [items, total, page, pageSize]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/Company"
+        total: { type: integer }
+        page: { type: integer }
+        pageSize: { type: integer }
+
+    AuctionBids:
+      type: object
+      properties:
+        position1: { type: number }
+        position2: { type: number }
+        position3: { type: number }
+
+    AuctionConfig:
+      type: object
+      required: [id, companyId, cityId, nicheId]
+      properties:
+        id: { type: string }
+        companyId: { type: string }
+        cityId: { type: string }
+        nicheId: { type: string }
+        mode:
+          type: string
+          enum: [manual, smart]
+        bids:
+          $ref: "#/components/schemas/AuctionBids"
+        targetShare:
+          type: string
+          enum: [one_in_3, one_in_5, one_in_10]
+        dailyBudget: { type: number }
+        isActive: { type: boolean }
+
+    AuctionConfigInput:
+      type: object
+      required: [companyId, cityId, nicheId, mode]
+      properties:
+        companyId: { type: string }
+        cityId: { type: string }
+        nicheId: { type: string }
+        mode:
+          type: string
+          enum: [manual, smart]
+        bids:
+          $ref: "#/components/schemas/AuctionBids"
+        targetShare:
+          type: string
+          enum: [one_in_3, one_in_5, one_in_10]
+        dailyBudget: { type: number }
+        isActive: { type: boolean }
+
+    AuctionSlot:
+      type: object
+      required: [position]
+      properties:
+        position: { type: integer }
+        company:
+          $ref: "#/components/schemas/Company"
+        currentBid: { type: number }
+
+    AuctionSlotOverview:
+      type: object
+      properties:
+        cityId: { type: string }
+        nicheId: { type: string }
+        slots:
+          type: array
+          items:
+            $ref: "#/components/schemas/AuctionSlot"
+
+    Wallet:
+      type: object
+      required: [balance, reserved, currency]
+      properties:
+        balance: { type: number }
+        reserved: { type: number }
+        currency: { type: string }
+
+    Transaction:
+      type: object
+      required: [id, companyId, type, amount]
+      properties:
+        id: { type: string }
+        companyId: { type: string }
+        type:
+          type: string
+          enum: [credit, debit, search_debit, recharge, wallet_debit, subscription_renewal, subscription_failed]
+        amount: { type: number }
+        amountCents: { type: number }
+        status:
+          type: string
+          enum: [pending, confirmed, failed, cancelled]
+        reason: { type: string }
+        provider: { type: string, nullable: true }
+        externalId: { type: string, nullable: true }
+        subscriptionId: { type: string, nullable: true }
+        periodStart:
+          type: string
+          format: date-time
+          nullable: true
+        periodEnd:
+          type: string
+          format: date-time
+          nullable: true
+        metadata:
+          type: object
+          nullable: true
+        occurredAt:
+          type: string
+          format: date-time
+
+    RechargeIntent:
+      type: object
+      required: [id, amount]
+      properties:
+        id: { type: string }
+        amount: { type: number }
+        method: { type: string }
+        status: { type: string }
+        createdAt:
+          type: string
+          format: date-time
+
+    BillingRechargeIntentInput:
+      type: object
+      required: [companyId, amount]
+      properties:
+        companyId: { type: string }
+        amount: { type: number }
+        method:
+          type: string
+          enum: [pix, credit_card, boleto]
+
+    SearchRequest:
+      type: object
+      required: [cityId, nicheId]
+      properties:
+        query: { type: string }
+        cityId: { type: string }
+        nicheId: { type: string }
+        lat: { type: number }
+        lng: { type: number }
+        source:
+          type: string
+          enum: [whatsapp, web, demo]
+
+    PublicSearchRequest:
+      type: object
+      required: [text, city]
+      properties:
+        text: { type: string }
+        city: { type: string }
+        niche: { type: string }
+        limit:
+          type: integer
+          description: Max 7 results
+
+    SearchResult:
+      type: object
+      required: [rank, position, isPaid]
+      properties:
+        company:
+          $ref: "#/components/schemas/Company"
+        rank: { type: integer }
+        position: { type: integer }
+        isPaid: { type: boolean }
+        chargedAmount: { type: number }
+        clickTrackingId: { type: string }
+
+    OfferedBy:
+      type: object
+      required: [text]
+      properties:
+        text: { type: string }
+        website: { type: string }
+        phoneE164: { type: string }
+        whatsappE164: { type: string }
+
+    SearchResponse:
+      type: object
+      required: [searchId, results]
+      properties:
+        searchId: { type: string }
+        results:
+          type: array
+          items:
+            $ref: "#/components/schemas/SearchResult"
+        offeredBy:
+          $ref: "#/components/schemas/OfferedBy"
+
+    SearchClickInput:
+      type: object
+      required: [companyId, channelType]
+      properties:
+        companyId: { type: string }
+        channelType:
+          type: string
+          enum: [phone, whatsapp]
+
+    SearchEventInput:
+      type: object
+      required: [type]
+      properties:
+        type:
+          type: string
+          enum: [impression, click_whatsapp, click_call]
+        companyId: { type: string }
+
+    ProductPlan:
+      type: object
+      required: [id, name, monthlyPriceCents, maxActiveOffers]
+      properties:
+        id: { type: string }
+        name: { type: string }
+        description: { type: string }
+        monthlyPriceCents: { type: number }
+        maxActiveOffers: { type: number }
+        isActive: { type: boolean }
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    Subscription:
+      type: object
+      required: [id, companyId, planId, status, currentPeriodStart, currentPeriodEnd]
+      properties:
+        id: { type: string }
+        companyId: { type: string }
+        planId: { type: string }
+        status:
+          type: string
+          enum: [active, past_due, cancelled]
+        currentPeriodStart:
+          type: string
+          format: date-time
+        currentPeriodEnd:
+          type: string
+          format: date-time
+        graceUntil:
+          type: string
+          format: date-time
+          nullable: true
+        scheduledPlanId: { type: string, nullable: true }
+        paymentMethod:
+          type: string
+          enum: [card, wallet]
+          nullable: true
+        plan:
+          $ref: "#/components/schemas/ProductPlan"
+
+    PaymentMethod:
+      type: object
+      required: [id, companyId, provider, customerId, paymentMethodId, status]
+      properties:
+        id: { type: string }
+        companyId: { type: string }
+        provider:
+          type: string
+          enum: [stripe, pagarme, mercadopago, dummy]
+        customerId: { type: string }
+        paymentMethodId: { type: string }
+        status:
+          type: string
+          enum: [active, revoked]
+        last4: { type: string, nullable: true }
+        brand: { type: string, nullable: true }
+        expMonth: { type: number, nullable: true }
+        expYear: { type: number, nullable: true }
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    PaymentMethodCreateInput:
+      type: object
+      required: [provider, customerId, paymentMethodId]
+      properties:
+        provider:
+          type: string
+          enum: [stripe, pagarme, mercadopago, dummy]
+        customerId: { type: string }
+        paymentMethodId: { type: string }
+        last4: { type: string }
+        brand: { type: string }
+        expMonth: { type: number }
+        expYear: { type: number }
+
+    ProductSubscriptionBody:
+      type: object
+      required: [planId]
+      properties:
+        planId: { type: string }
+
+    ProductOffer:
+      type: object
+      required: [id, companyId, cityId, nicheId, title, priceCents]
+      properties:
+        id: { type: string }
+        companyId: { type: string }
+        cityId: { type: string }
+        nicheId: { type: string }
+        title: { type: string }
+        description: { type: string }
+        priceCents: { type: number }
+        originalPriceCents:
+          type: number
+          nullable: true
+        isActive: { type: boolean }
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    ProductSearchResult:
+      type: object
+      required: [id, title, priceCents, company, city, source]
+      properties:
+        id: { type: string }
+        title: { type: string }
+        priceCents: { type: integer }
+        validUntil: { type: string }
+        company:
+          type: object
+          required: [id]
+          properties:
+            id: { type: string }
+            name: { type: string }
+            phone: { type: string }
+            address: { type: string }
+        city:
+          type: object
+          required: [id]
+          properties:
+            id: { type: string }
+            name: { type: string }
+        source:
+          type: string
+          enum: [product]
+
+    ProductOfferCreateInput:
+      type: object
+      required: [cityId, nicheId, title, description, priceCents]
+      properties:
+        cityId: { type: string }
+        nicheId: { type: string }
+        title: { type: string }
+        description: { type: string }
+        priceCents: { type: integer }
+        originalPriceCents:
+          type: integer
+          nullable: true
+        isActive: { type: boolean }
+
+    ProductOfferUpdateInput:
+      type: object
+      properties:
+        title: { type: string }
+        description: { type: string }
+        priceCents: { type: integer }
+        originalPriceCents:
+          type: integer
+          nullable: true
+        isActive: { type: boolean }
+
+    PaginatedProductOffers:
+      type: object
+      required: [items, total, page, pageSize]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/ProductOffer"
+        total: { type: integer }
+        page: { type: integer }
+        pageSize: { type: integer }
+
+    ProductSearchRequest:
+      type: object
+      required: [cityId]
+      properties:
+        cityId: { type: string }
+        nicheId: { type: string }
+        query: { type: string }
+        limit: { type: integer }
+
+    ProductSearchResponse:
+      type: object
+      required: [items, total]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/ProductSearchResult"
+        total: { type: integer }
+
+    ClaimCandidate:
+      type: object
+      required: [companyId, nome, cityId, serpPhoneMasked, matchReason]
+      properties:
+        companyId: { type: string }
+        nome: { type: string }
+        cityId: { type: string }
+        serpPhoneMasked: { type: string }
+        matchReason:
+          type: string
+          enum: [both, phone, name]
+
+    ClaimRequestInput:
+      type: object
+      required: [companyId, phone]
+      properties:
+        companyId: { type: string }
+        phone: { type: string }
+
+    ClaimRequestResponse:
+      type: object
+      required: [requestId, method, next]
+      properties:
+        requestId: { type: string }
+        method:
+          type: string
+          enum: [whatsapp_otp, cnpj_whatsapp]
+        next:
+          type: object
+          required: [type, message]
+          properties:
+            type:
+              type: string
+              enum: [otp, cnpj_whatsapp]
+            message: { type: string }
+            supportWhatsapp: { type: string }
+
+    ClaimCnpjConfirmInput:
+      type: object
+      required: [requestId]
+      properties:
+        requestId: { type: string }
+        message: { type: string }
+
+    ClaimCnpjConfirmResponse:
+      type: object
+      required: [success, next]
+      properties:
+        success: { type: boolean }
+        next:
+          type: object
+          required: [type, supportWhatsapp, message]
+          properties:
+            type:
+              type: string
+              enum: [cnpj_whatsapp]
+            supportWhatsapp: { type: string }
+            message: { type: string }
+
+    BillingPurchaseRequest:
+      type: object
+      required: [amountCents]
+      properties:
+        amountCents: { type: number }
+        description: { type: string }
+        plano: { type: string }
+
+    BillingPurchaseResponse:
+      type: object
+      required: [success, balanceCents]
+      properties:
+        success: { type: boolean }
+        balanceCents: { type: number }
+
+    AnalyticsDashboardMoment:
+      type: object
+      required: [appearancesToday, contactsToday, costPerContactToday, creditsSpentToday]
+      properties:
+        appearancesToday: { type: number }
+        contactsToday: { type: number }
+        costPerContactToday: { type: number }
+        creditsSpentToday: { type: number }
+        currentPositionMainNiche:
+          type: integer
+          nullable: true
+
+    AnalyticsDashboardPeriodTopNiche:
+      type: object
+      required: [nicheId, niche, total]
+      properties:
+        nicheId: { type: string }
+        niche: { type: string }
+        total: { type: number }
+
+    AnalyticsDashboardPeriod:
+      type: object
+      required: [impressions, contacts, totalSpent]
+      properties:
+        impressions: { type: number }
+        contacts: { type: number }
+        totalSpent: { type: number }
+        realImpressions: { type: number }
+        realClicks: { type: number }
+        realClicksWhatsapp: { type: number }
+        realClicksCall: { type: number }
+        realCtr: { type: number }
+        topCompaniesByClick:
+          type: array
+          description: Admin-only. Returns top companies by click volume.
+          items:
+            type: object
+            required: [companyId, name, total]
+            properties:
+              companyId: { type: string }
+              name: { type: string }
+              total: { type: number }
+        bestDayOfWeek:
+          type: string
+          nullable: true
+        bestHour:
+          type: string
+          nullable: true
+        topNiche:
+          $ref: "#/components/schemas/AnalyticsDashboardPeriodTopNiche"
+          nullable: true
+
+    AnalyticsDashboardNiche:
+      type: object
+      required: [nicheId, nicheName, iecToday, impressionsToday, contactsToday, activeReserve]
+      properties:
+        nicheId: { type: string }
+        nicheName: { type: string }
+        positionToday:
+          type: integer
+          nullable: true
+        iecToday: { type: number }
+        impressionsToday: { type: number }
+        contactsToday: { type: number }
+        activeReserve: { type: number }
+
+    AnalyticsDashboardResponse:
+      type: object
+      required: [moment, period, niches]
+      properties:
+        moment:
+          $ref: "#/components/schemas/AnalyticsDashboardMoment"
+        period:
+          $ref: "#/components/schemas/AnalyticsDashboardPeriod"
+        niches:
+          type: array
+          items:
+            $ref: "#/components/schemas/AnalyticsDashboardNiche"
+
+    SearchAnalyticsItem:
+      type: object
+      required:
+        [searchId, createdAt, city, niche, query, totalResults, paidResults, organicResults, totalCharged, hasClicks]
+      properties:
+        searchId: { type: string }
+        createdAt:
+          type: string
+          format: date-time
+        city: { type: string }
+        niche: { type: string }
+        query: { type: string }
+        totalResults: { type: integer }
+        paidResults: { type: integer }
+        organicResults: { type: integer }
+        totalCharged: { type: number }
+        hasClicks: { type: boolean }
+
+    SearchAnalyticsResponse:
+      type: object
+      required: [items, total, page, pageSize]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/SearchAnalyticsItem"
+        total: { type: integer }
+        page: { type: integer }
+        pageSize: { type: integer }
+
+    CitiesQuery:
+      type: object
+      properties:
+        q: { type: string }
+
+    NichesQuery:
+      type: object
+      properties:
+        cityId: { type: string }
+
+    CompaniesQuery:
+      type: object
+      properties:
+        q: { type: string }
+        cityId: { type: string }
+        nicheId: { type: string }
+        status:
+          type: string
+          enum: [pending, active, suspended]
+
+    CompanyIdParam:
+      type: object
+      required: [companyId]
+      properties:
+        companyId: { type: string }
+
+    CompanyChannelsInput:
+      type: object
+      properties:
+        phone: { type: string }
+        whatsapp: { type: string }
+        address: { type: string }
+        latitude: { type: number }
+        longitude: { type: number }
+        openingHours: { type: string }
+
+    AuctionConfigQuery:
+      type: object
+      properties:
+        companyId: { type: string }
+        cityId: { type: string }
+        nicheId: { type: string }
+
+    AuctionSlotQuery:
+      type: object
+      required: [cityId, nicheId]
+      properties:
+        cityId: { type: string }
+        nicheId: { type: string }
+
+    BillingTransactionsQuery:
+      type: object
+      required: [companyId]
+      properties:
+        companyId: { type: string }
+        from:
+          type: string
+          format: date-time
+        to:
+          type: string
+          format: date-time
+
+    SearchAnalyticsQuery:
+      type: object
+      properties:
+        from:
+          type: string
+          format: date-time
+        to:
+          type: string
+          format: date-time
+        cityId: { type: string }
+        nicheId: { type: string }
+        companyId: { type: string }
+        page: { type: integer }
+        pageSize: { type: integer }
+
+    ProductOffersQuery:
+      type: object
+      properties:
+        page: { type: integer }
+        pageSize: { type: integer }
+
+    SearchClickParams:
+      type: object
+      required: [searchId]
+      properties:
+        searchId: { type: string }
+
+    WhatsappWebhookPayload:
+      type: object
+      required: [object, entry]
+      properties:
+        object:
+          type: string
+        entry:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+              changes:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    value:
+                      type: object
+                      properties:
+                        messages:
+                          type: array
+                          items:
+                            type: object
+                            properties:
+                              from:
+                                type: string
+                              id:
+                                type: string
+                              timestamp:
+                                type: string
+                              type:
+                                type: string
+                              text:
+                                type: object
+                                properties:
+                                  body:
+                                    type: string
+                        metadata:
+                          type: object
+                          properties:
+                            phone_number_id:
+                              type: string
+
+    WhatsappInboundMessage:
+      type: object
+      required: [from, phoneNumberId, messageId, text]
+      properties:
+        from:
+          type: string
+        phoneNumberId:
+          type: string
+        messageId:
+          type: string
+        text:
+          type: string
+
+    WhatsappOutboundMessage:
+      type: object
+      required: [to, phoneNumberId, body]
+      properties:
+        to:
+          type: string
+        phoneNumberId:
+          type: string
+        body:
+          type: string
+
+    HealthResponse:
+      type: object
+      required: [status]
+      properties:
+        status:
+          type: string
+
+paths:
+  /auth/login:
+    post:
+      summary: Login
+      operationId: login
+      tags: [auth]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AuthLoginInput"
+      responses:
+        "200":
+          description: Auth tokens + user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthLoginResponse"
+
+  /auth/me:
+    get:
+      summary: Current user
+      operationId: getCurrentUser
+      tags: [auth]
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Current user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+
+  /auth/refresh:
+    post:
+      summary: Refresh token
+      operationId: refresh
+      tags: [auth]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AuthRefreshInput"
+      responses:
+        "200":
+          description: New access token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthRefreshResponse"
+
+  /auth/logout:
+    post:
+      summary: Logout user
+      operationId: logoutUser
+      tags: [auth]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AuthLogoutRequest"
+      responses:
+        "204":
+          description: Token invalidated
+        "401":
+          description: Invalid credentials or missing token
+
+  /cities:
+    get:
+      summary: List cities
+      operationId: listCities
+      tags: [catalog]
+      parameters:
+        - name: q
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        "200":
+          description: List of cities
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/City"
+
+  /niches:
+    get:
+      summary: List niches
+      operationId: listNiches
+      tags: [catalog]
+      parameters:
+        - name: cityId
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        "200":
+          description: List of niches
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Niche"
+
+  /product-plans:
+    get:
+      summary: List product plans
+      operationId: listProductPlans
+      tags: [products]
+      responses:
+        "200":
+          description: Available plans
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ProductPlan"
+
+  /companies:
+    get:
+      summary: List companies
+      operationId: listCompanies
+      tags: [companies]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: q
+          in: query
+          schema:
+            type: string
+        - name: cityId
+          in: query
+          schema:
+            type: string
+        - name: nicheId
+          in: query
+          schema:
+            type: string
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [pending, active, suspended]
+      responses:
+        "200":
+          description: Paginated companies
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PaginatedCompanies"
+    post:
+      summary: Create company
+      operationId: createCompany
+      tags: [companies]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CompanyCreateInput"
+      responses:
+        "201":
+          description: Created company
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Company"
+
+  /companies/{companyId}:
+    parameters:
+      - name: companyId
+        in: path
+        required: true
+        schema:
+          type: string
+    get:
+      summary: Get company by ID
+      operationId: getCompany
+      tags: [companies]
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Company
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Company"
+    patch:
+      summary: Update company
+      operationId: updateCompany
+      tags: [companies]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CompanyUpdateInput"
+    responses:
+      "200":
+        description: Updated company
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Company"
+
+  /claims/candidates:
+    get:
+      summary: Search claim candidates
+      operationId: listClaimCandidates
+      tags: [claims]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: cityId
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: q
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Potential company matches
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ClaimCandidate"
+
+  /claims/request:
+    post:
+      summary: Start a claim request
+      operationId: createClaimRequest
+      tags: [claims]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ClaimRequestInput"
+      responses:
+        "200":
+          description: Claim tracking handle
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ClaimRequestResponse"
+
+  /claims/cnpj/confirm:
+    post:
+      summary: Confirm card CNPJ sent via WhatsApp
+      operationId: confirmClaimCnpj
+      tags: [claims]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ClaimCnpjConfirmInput"
+      responses:
+        "200":
+          description: Instruction to send CNPJ to support
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ClaimCnpjConfirmResponse"
+
+  /admin/serpapi/import:
+    post:
+      summary: Start SerpAPI import
+      operationId: startSerpapiImport
+      tags: [serpapi]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SerpapiImportRequest"
+      responses:
+        "200":
+          description: Import run queued
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  runId: { type: string }
+
+  /admin/companies:
+    get:
+      summary: List companies (admin)
+      operationId: listAdminCompanies
+      tags: [companies]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: cityId
+          in: query
+          schema:
+            type: string
+        - name: nicheId
+          in: query
+          schema:
+            type: string
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [draft, pending, active, suspended]
+        - name: q
+          in: query
+          schema:
+            type: string
+        - name: page
+          in: query
+          schema:
+            type: integer
+        - name: limit
+          in: query
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Companies list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminCompaniesResponse"
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+    post:
+      summary: Create company (admin)
+      operationId: createAdminCompany
+      tags: [companies]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdminCompanyCreateInput"
+      responses:
+        "201":
+          description: Company created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminCompany"
+        "400":
+          description: Invalid payload
+        "409":
+          description: Dedupe conflict
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DedupeConflictResponse"
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+
+  /admin/companies/{companyId}:
+    parameters:
+      - name: companyId
+        in: path
+        required: true
+        schema:
+          type: string
+    get:
+      summary: Get company (admin)
+      operationId: getAdminCompany
+      tags: [companies]
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Company detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminCompany"
+        "404":
+          description: Company not found
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+    patch:
+      summary: Update company (admin)
+      operationId: updateAdminCompany
+      tags: [companies]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdminCompanyUpdateInput"
+      responses:
+        "200":
+          description: Company updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminCompany"
+        "400":
+          description: Invalid payload
+        "409":
+          description: Dedupe conflict
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DedupeConflictResponse"
+        "404":
+          description: Company not found
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+
+  /admin/companies/{companyId}/status:
+    parameters:
+      - name: companyId
+        in: path
+        required: true
+        schema:
+          type: string
+    patch:
+      summary: Update company status (admin)
+      operationId: updateAdminCompanyStatus
+      tags: [companies]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdminCompanyStatusInput"
+      responses:
+        "200":
+          description: Status updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+        "400":
+          description: Invalid status
+        "404":
+          description: Company not found
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+
+  /admin/serpapi/runs:
+    get:
+      summary: List SerpAPI runs
+      operationId: listSerpapiRuns
+      tags: [serpapi]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+        - name: pageSize
+          in: query
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Run summaries
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/SerpapiRunSummary"
+
+  /admin/serpapi/runs/{runId}:
+    parameters:
+      - name: runId
+        in: path
+        required: true
+        schema:
+          type: string
+    get:
+      summary: Get run detail
+      operationId: getSerpapiRun
+      tags: [serpapi]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+        - name: page
+          in: query
+          schema:
+            type: integer
+        - name: pageSize
+          in: query
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Run detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SerpapiRunDetail"
+        "404":
+          description: Run not found
+
+  /admin/serpapi/runs/{runId}/records:
+    parameters:
+      - name: runId
+        in: path
+        required: true
+        schema:
+          type: string
+    get:
+      summary: List records for a SerpAPI run
+      operationId: listSerpapiRunRecords
+      tags: [serpapi]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+      responses:
+        "200":
+          description: Records list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SerpapiRecordsResponse"
+        "404":
+          description: Run not found
+
+  /admin/serpapi/runs/{runId}/resolve-conflict:
+    parameters:
+      - name: runId
+        in: path
+        required: true
+        schema:
+          type: string
+    post:
+      summary: Resolve a conflict record
+      operationId: resolveSerpapiConflict
+      tags: [serpapi]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ResolveConflictRequest"
+      responses:
+        "200":
+          description: Conflict resolved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+
+  /admin/serpapi/runs/{runId}/records/{recordId}/publish:
+    parameters:
+      - name: runId
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: recordId
+        in: path
+        required: true
+        schema:
+          type: string
+    post:
+      summary: Publish a SerpAPI record as company
+      operationId: publishSerpapiRecord
+      tags: [serpapi]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SerpapiPublishRequest"
+      responses:
+        "200":
+          description: Published company
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SerpapiPublishResponse"
+        "400":
+          description: Invalid payload or status
+        "404":
+          description: Run/record not found
+        "409":
+          description: Dedupe conflict
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DedupeConflictResponse"
+
+  /admin/serpapi/export:
+    get:
+      summary: Export SerpAPI data
+      operationId: exportSerpapi
+      tags: [serpapi]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: runId
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: type
+          in: query
+          required: true
+          schema:
+            type: string
+            enum: [runs, records, conflicts, companies]
+      responses:
+        "200":
+          description: CSV export
+          content:
+            text/csv:
+              schema:
+                type: string
+
+  /companies/{companyId}/claim:
+    parameters:
+      - name: companyId
+        in: path
+        required: true
+        schema:
+          type: string
+    post:
+      summary: Claim company
+      operationId: claimCompany
+      tags: [companies]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CompanyClaimInput"
+      responses:
+        "200":
+          description: Claim response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status: { type: string }
+
+  /companies/{companyId}/channels:
+    parameters:
+      - name: companyId
+        in: path
+        required: true
+        schema:
+          type: string
+    patch:
+      summary: Update company channels
+      operationId: updateCompanyChannels
+      tags: [companies]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CompanyChannels"
+      responses:
+        "200":
+          description: Channel update response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status: { type: string }
+
+  /auction/configs:
+    get:
+      summary: List auction configs
+      operationId: listAuctionConfigs
+      tags: [auction]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: companyId
+          in: query
+          schema:
+            type: string
+        - name: cityId
+          in: query
+          schema:
+            type: string
+        - name: nicheId
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Auction configs
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AuctionConfig"
+    post:
+      summary: Upsert auction config
+      operationId: saveAuctionConfig
+      tags: [auction]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AuctionConfigInput"
+      responses:
+        "200":
+          description: Saved config
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuctionConfig"
+
+  /auction/slots:
+    get:
+      summary: Get slot overview
+      operationId: getAuctionSlots
+      tags: [auction]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: cityId
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: nicheId
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Slot info
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuctionSlotOverview"
+
+  /billing/wallet:
+    get:
+      summary: Get wallet
+      operationId: getWallet
+      tags: [billing]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: companyId
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Wallet
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Wallet"
+
+  /billing/transactions:
+    get:
+      summary: List billing transactions
+      operationId: listBillingTransactions
+      tags: [billing]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: companyId
+          in: query
+          schema:
+            type: string
+        - name: from
+          in: query
+          schema:
+            type: string
+            format: date-time
+        - name: to
+          in: query
+          schema:
+            type: string
+            format: date-time
+      responses:
+        "200":
+          description: Transactions
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Transaction"
+
+  /billing/recharge-intents:
+    post:
+      summary: Create recharge intent
+      operationId: createRechargeIntent
+      tags: [billing]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BillingRechargeIntentInput"
+      responses:
+        "201":
+          description: Recharge intent
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RechargeIntent"
+
+  /billing/purchase:
+    post:
+      summary: Purchase billing credits
+      operationId: purchaseBillingCredits
+      tags: [billing]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BillingPurchaseRequest"
+      responses:
+        "200":
+          description: Purchase result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BillingPurchaseResponse"
+        "400":
+          description: Invalid payload
+        "401":
+          description: Unauthorized access
+
+  /subscriptions:
+    get:
+      summary: Get subscription
+      operationId: getSubscription
+      tags: [billing]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: companyId
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Subscription
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Subscription"
+        "404":
+          description: Subscription not found
+
+  /admin/subscriptions/{companyId}/downgrade:
+    parameters:
+      - name: companyId
+        in: path
+        required: true
+        schema:
+          type: string
+    post:
+      summary: Schedule subscription downgrade
+      operationId: scheduleSubscriptionDowngrade
+      tags: [billing]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [planId]
+              properties:
+                planId: { type: string }
+      responses:
+        "200":
+          description: Scheduled downgrade
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Subscription"
+        "404":
+          description: Subscription not found
+
+  /admin/payment-methods/{companyId}:
+    parameters:
+      - name: companyId
+        in: path
+        required: true
+        schema:
+          type: string
+    post:
+      summary: Register payment method
+      operationId: registerPaymentMethod
+      tags: [billing]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PaymentMethodCreateInput"
+      responses:
+        "201":
+          description: Payment method created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PaymentMethod"
+
+  /admin/payment-methods/{companyId}/{id}:
+    parameters:
+      - name: companyId
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+    delete:
+      summary: Revoke payment method
+      operationId: revokePaymentMethod
+      tags: [billing]
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Payment method revoked
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PaymentMethod"
+        "404":
+          description: Payment method not found
+
+  /search:
+    post:
+      summary: Company search
+      operationId: searchCompanies
+      tags: [search]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SearchRequest"
+      responses:
+        "200":
+          description: Search results
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SearchResponse"
+
+  /public/search:
+    post:
+      summary: Public company search (resolve city/niche by name)
+      operationId: publicSearchCompanies
+      tags: [search]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PublicSearchRequest"
+      responses:
+        "200":
+          description: Search results
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SearchResponse"
+        "400":
+          description: Invalid payload or city not found
+
+  /search/{searchId}/click:
+    parameters:
+      - name: searchId
+        in: path
+        required: true
+        schema:
+          type: string
+    post:
+      summary: Log click
+      operationId: logClick
+      tags: [search]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SearchClickInput"
+      responses:
+        "204":
+          description: OK
+
+  /search/{searchId}/events:
+    parameters:
+      - name: searchId
+        in: path
+        required: true
+        schema:
+          type: string
+    post:
+      summary: Track search events
+      operationId: trackSearchEvent
+      tags: [search]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SearchEventInput"
+      responses:
+        "204":
+          description: OK
+        "400":
+          description: Invalid payload
+        "404":
+          description: Search not found
+
+  /search/products:
+    post:
+      summary: Product search
+      operationId: searchProducts
+      tags: [search]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProductSearchRequest"
+      responses:
+        "200":
+          description: Product search results
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProductSearchResponse"
+    get:
+      summary: Product search via query params
+      operationId: searchProductsByQuery
+      tags: [search]
+      parameters:
+        - name: query
+          in: query
+          schema:
+            type: string
+        - name: cityId
+          in: query
+          schema:
+            type: string
+        - name: nicheId
+          in: query
+          schema:
+            type: string
+        - name: limit
+          in: query
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Product search results
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProductSearchResponse"
+
+  /analytics/searches:
+    get:
+      summary: Search analytics
+      operationId: getSearchAnalytics
+      tags: [analytics]
+      parameters:
+        - name: from
+          in: query
+          schema:
+            type: string
+            format: date-time
+        - name: to
+          in: query
+          schema:
+            type: string
+            format: date-time
+        - name: cityId
+          in: query
+          schema:
+            type: string
+        - name: nicheId
+          in: query
+          schema:
+            type: string
+        - name: companyId
+          in: query
+          schema:
+            type: string
+        - name: page
+          in: query
+          schema:
+            type: integer
+        - name: pageSize
+          in: query
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Analytics
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SearchAnalyticsResponse"
+
+  /analytics/dashboard:
+    get:
+      summary: Dashboard KPIs
+      operationId: getAnalyticsDashboard
+      tags: [analytics]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: companyId
+          in: query
+          schema:
+            type: string
+        - name: from
+          in: query
+          schema:
+            type: string
+            format: date-time
+        - name: to
+          in: query
+          schema:
+            type: string
+            format: date-time
+        - name: period
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Dashboard summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AnalyticsDashboardResponse"
+        "400":
+          description: Missing or invalid parameters
+        "401":
+          description: Unauthorized
+
+  /companies/{companyId}/product-subscription:
+    parameters:
+      - name: companyId
+        in: path
+        required: true
+        schema:
+          type: string
+    get:
+      summary: Get product subscription
+      operationId: getCompanySubscription
+      tags: [products]
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Subscription
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Subscription"
+    post:
+      summary: Set product subscription
+      operationId: setCompanySubscription
+      tags: [products]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProductSubscriptionBody"
+      responses:
+        "200":
+          description: Updated subscription
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Subscription"
+
+  /companies/{companyId}/product-offers:
+    parameters:
+      - name: companyId
+        in: path
+        required: true
+        schema:
+          type: string
+    get:
+      summary: List product offers
+      operationId: listCompanyOffers
+      tags: [products]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+        - name: pageSize
+          in: query
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Offers
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PaginatedProductOffers"
+    post:
+      summary: Create product offer
+      operationId: createCompanyOffer
+      tags: [products]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProductOfferCreateInput"
+      responses:
+        "201":
+          description: Created offer
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProductOffer"
+
+  /companies/{companyId}/product-offers/{offerId}:
+    parameters:
+      - name: companyId
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: offerId
+        in: path
+        required: true
+        schema:
+          type: string
+    patch:
+      summary: Update product offer
+      operationId: updateCompanyOffer
+      tags: [products]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProductOfferUpdateInput"
+      responses:
+        "200":
+          description: Updated offer
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProductOffer"
+
+  /integrations/whatsapp/webhook:
+    post:
+      summary: Webhook de mensagens do WhatsApp
+      description: Endpoint chamado pelo WhatsApp Cloud API. Valida WHATSAPP_WEBHOOK_SECRET (header x-webhook-secret) e faz dedupe por messageId. Outbound depende de WHATSAPP_PROVIDER (generic|meta).
+      tags: [Integrations]
+      parameters:
+        - in: header
+          name: x-webhook-secret
+          required: true
+          schema:
+            type: string
+          description: Shared secret for webhook authentication
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/WhatsappWebhookPayload"
+            examples:
+              inboundMessage:
+                summary: Mensagem de texto recebida
+                value:
+                  object: "whatsapp_business_account"
+                  entry:
+                    - id: "entry-id"
+                      changes:
+                        - field: "messages"
+                          value:
+                            messages:
+                              - from: "5511999999999"
+                                id: "wamid.TEST"
+                                timestamp: "1700000000"
+                                type: "text"
+                                text:
+                                  body: "dentista em sorocaba"
+                            metadata:
+                              phone_number_id: "1234567890"
+      responses:
+        "200":
+          description: Webhook processed successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [ok]
+                properties:
+                  ok: { type: boolean }
+        "401":
+          description: Invalid webhook token
+        "400":
+          description: Invalid payload
+
+  /r/w/{searchId}/{companyId}:
+    get:
+      summary: Redirect para WhatsApp com tracking
+      description: "Endpoint publico de redirect: registra click_whatsapp e redireciona para wa.me. Usa PUBLIC_BASE_URL nos links gerados."
+      tags: [Search]
+      parameters:
+        - in: path
+          name: searchId
+          required: true
+          schema: { type: string, format: uuid }
+        - in: path
+          name: companyId
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "302":
+          description: Redirect to wa.me
+          headers:
+            Location:
+              schema: { type: string }
+        "400":
+          description: Missing company phone/whatsapp
+        "404":
+          description: Invalid searchId/companyId
+
+  /r/c/{searchId}/{companyId}:
+    get:
+      summary: Redirect para ligacao com tracking
+      description: "Endpoint publico de redirect: registra click_call e redireciona para tel:. Usa PUBLIC_BASE_URL nos links gerados."
+      tags: [Search]
+      parameters:
+        - in: path
+          name: searchId
+          required: true
+          schema: { type: string, format: uuid }
+        - in: path
+          name: companyId
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "302":
+          description: "Redirect to tel:"
+          headers:
+            Location:
+              schema: { type: string }
+        "400":
+          description: Missing company phone/whatsapp
+        "404":
+          description: Invalid searchId/companyId
+
+  /internal/metrics:
+    get:
+      summary: Prometheus metrics (admin-only)
+      description: Não expor publicamente
+      tags: [Internal]
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Metrics payload (JSON with snapshot)
+          content:
+            application/json:
+              schema:
+                type: object
+                description: Internal metrics snapshot
+
+  /internal/health:
+    get:
+      summary: API health check (internal)
+      description: Não expor publicamente
+      tags: [Internal]
+      responses:
+        "200":
+          description: Health status
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [status, uptime, timestamp, version, services]
+                properties:
+                  status: { type: string }
+                  uptime: { type: number }
+                  timestamp: { type: string }
+                  version: { type: string }
+                  services:
+                    type: object
+                    required: [database, whatsapp_webhook, whatsapp_api]
+                    properties:
+                      database: { type: string }
+                      whatsapp_webhook: { type: string }
+                      whatsapp_api: { type: string }

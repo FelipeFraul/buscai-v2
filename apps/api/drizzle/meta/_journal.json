@@ -1,0 +1,48 @@
+{
+  "version": "5",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "1",
+      "when": 1732440000000,
+      "tag": "0000_init",
+      "breakpoints": false
+    },
+    {
+      "idx": 1,
+      "version": "1",
+      "when": 1732447200000,
+      "tag": "0001_phase6",
+      "breakpoints": false
+    },
+    {
+      "idx": 2,
+      "version": "1",
+      "when": 1732454400000,
+      "tag": "0002_phase7_products",
+      "breakpoints": false
+    },
+    {
+      "idx": 3,
+      "version": "1",
+      "when": 1732461600000,
+      "tag": "0003_internal_events",
+      "breakpoints": false
+    },
+    {
+      "idx": 4,
+      "version": "1",
+      "when": 1732465200000,
+      "tag": "0004_internal_events_indexes",
+      "breakpoints": false
+    },
+    {
+      "idx": 5,
+      "version": "1",
+      "when": 1732468800000,
+      "tag": "0005_internal_events_payload",
+      "breakpoints": false
+    }
+  ]
+}

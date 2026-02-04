@@ -1,0 +1,141 @@
+{
+  "runId": "LT_20260117203200",
+  "startedAt": "2026-01-17T23:32:00.467Z",
+  "params": {
+    "city": "Itapetininga",
+    "state": "SP",
+    "niches": 2,
+    "companiesPerNiche": 6,
+    "auctionNiches": 1,
+    "biddersPerNiche": 3,
+    "organicPerNiche": 2,
+    "seed": 123,
+    "runId": "LT_20260117203200",
+    "cleanup": false
+  },
+  "totals": {
+    "niches": {
+      "created": 2,
+      "existing": 0
+    },
+    "companies": {
+      "created": 12,
+      "existing": 0
+    },
+    "companyNiches": {
+      "inserted": 12
+    },
+    "auctionConfigs": {
+      "created": 3,
+      "updated": 0
+    },
+    "wallets": {
+      "created": 3,
+      "updated": 0
+    }
+  },
+  "metrics": {
+    "paidCount": {
+      "min": 0,
+      "avg": 2,
+      "max": 3
+    },
+    "organicCount": {
+      "min": 2,
+      "avg": 2,
+      "max": 2
+    },
+    "distinctPaidTop3": {
+      "min": 0,
+      "avg": 2,
+      "max": 3
+    },
+    "distinctBidders": {
+      "min": 0,
+      "avg": 2,
+      "max": 3
+    },
+    "organicAvailable": {
+      "min": 3,
+      "avg": 5,
+      "max": 6
+    }
+  },
+  "anomalies": [],
+  "samples": [
+    {
+      "nicheId": "7b53e70b-c791-4412-8324-7e4c81a0ed69",
+      "nicheLabel": "LT LT_20260117203200 - Nicho 001",
+      "paidCount": 3,
+      "organicCount": 2,
+      "distinctPaidTop3": 3,
+      "distinctBidders": 3,
+      "organicAvailable": 3,
+      "top5": [
+        {
+          "position": 1,
+          "companyId": "983d9adb-4645-496c-9616-6560420f6eff",
+          "name": "LT LT_20260117203200 - Empresa 001-01",
+          "isPaid": true
+        },
+        {
+          "position": 2,
+          "companyId": "67ec6205-0cc6-4174-82b6-030408c74d41",
+          "name": "LT LT_20260117203200 - Empresa 001-04",
+          "isPaid": true
+        },
+        {
+          "position": 3,
+          "companyId": "8e0b8748-eb68-448e-b221-c66e6ccb61ca",
+          "name": "LT LT_20260117203200 - Empresa 001-03",
+          "isPaid": true
+        },
+        {
+          "position": 4,
+          "companyId": "f04b7db7-56bc-4f59-bdf5-997f1ba23af6",
+          "name": "LT LT_20260117203200 - Empresa 001-02",
+          "isPaid": false
+        },
+        {
+          "position": 5,
+          "companyId": "c411d3cb-c20d-4c4a-a0d5-f777864f1a46",
+          "name": "LT LT_20260117203200 - Empresa 001-05",
+          "isPaid": false
+        }
+      ]
+    },
+    {
+      "nicheId": "4c9b94e9-616a-4473-90da-40fd92332359",
+      "nicheLabel": "LT LT_20260117203200 - Nicho 002",
+      "paidCount": 0,
+      "organicCount": 2,
+      "distinctPaidTop3": 0,
+      "distinctBidders": 0,
+      "organicAvailable": 6,
+      "top5": [
+        {
+          "position": 4,
+          "companyId": "f3c03f0c-5f0b-4ec5-8544-271e0278b685",
+          "name": "LT LT_20260117203200 - Empresa 002-01",
+          "isPaid": false
+        },
+        {
+          "position": 5,
+          "companyId": "fbbb4166-f079-40b4-8993-eec8c874038d",
+          "name": "LT LT_20260117203200 - Empresa 002-02",
+          "isPaid": false
+        }
+      ]
+    }
+  ],
+  "timingsMs": {
+    "cleanup": 0,
+    "ensureUser": 481,
+    "ensureCity": 10,
+    "ensureNiches": 16,
+    "ensureCompanies": 124,
+    "linkCompanies": 15,
+    "auctionConfigs": 55,
+    "validation": 506
+  }
+}

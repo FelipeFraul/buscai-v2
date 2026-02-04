@@ -1,0 +1,23 @@
+{
+  "name": "buscai-v2",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "generate:api-types": "openapi-typescript openapi/buscai-v2.yaml -o packages/shared-schema/src/api-types.ts",
+    "test": "pnpm -r test",
+    "lint": "pnpm -r lint"
+  },
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "devDependencies": {
+    "openapi-typescript": "^7.10.1"
+  },
+  "pnpm": {
+    "overrides": {
+      "jws": "3.2.3"
+    }
+  }
+}
